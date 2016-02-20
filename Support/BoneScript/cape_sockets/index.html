@@ -1,6 +1,6 @@
 ---
 layout: index
-title: getPlatform
+title: Sockets Cape
 scripts: [ /static/bonescript-demo.js ]
 style: |
    #code {
@@ -23,66 +23,109 @@ style: |
     resize: vertical;
    }
 ---
-    <!-- NEED TITLE HERE -->
-    <h2>Bonescript</h2>
+<script>
+var s = {};
 
-    <div id='side-menu' class="t3_sidebar">
-     <ul class="left-menu">
-      <strong>Navigation</strong>
-      <li><a href="{{site.baseurl}}/Support/BoneScript/menu/">Menu contents</a></li>
-     </ul>
-    </div>
-    <div class="t3_content_1">
-     <div id='connect-status'></div>
-     <div id="content_child">
-     <!--- START CONTENT -->
+s.sockets = [
+    { types: ['T'], pins: ['3.3V', '5V', 'NC', 'SP', 'SP', 'SP', 'SP', 'NC', 'NC', 'GND'], touch: ['P9_37', 'P9_38', 'P9_39', 'P9_40'] },
+    { types: ['R', 'Y'], pins: ['3.3V', '5V', 'P8_34', 'P8_35', 'P8_33', 'P8_31', 'P8_32', 'P8_27', 'P8_29', 'GND'] },
+    { types: ['G', 'Y'], pins: ['3.3V', '5V', 'P8_42', 'P8_39', 'P8_40', 'P8_37', 'P8_38', 'P8_36', 'P8_26', 'GND'] },
+    { types: ['B', 'Y'], pins: ['3.3V', '5V', 'P8_45', 'P8_46', 'P8_43', 'P8_44', 'P8_41', 'P8_30', 'P8_28', 'GND'] },
+    { types: ['F', 'Y'], pins: ['3.3V', '5V', 'P8_14', 'P8_25', 'P8_24', 'P8_20', 'P8_5', 'P8_6', 'P8_21', 'GND'] },
+    { types: ['P', 'Y'], pins: ['3.3V', '5V', 'P8_10', 'P8_11', 'P8_12', 'P8_15', 'P9_14', 'P9_16', 'P9_42', 'GND'] },
+    { types: ['I', 'Y'], pins: ['3.3V', '5V', 'P8_19', 'P8_22', 'P8_23', 'P8_16', 'P8_18', 'P9_20', 'P9_19', 'GND'] },
+    { types: ['A'], pins: ['3.3V', '5V', 'P9_15', 'P9_23', 'SP', 'P8_3', 'NC', 'NC', 'NC', 'GND'], analog: ['P9_33', 'P9_35', 'P9_36'] },
+    { types: ['U', 'X'], pins: ['3.3V', '5V', 'P8_13', 'P9_13', 'P9_11', 'P9_12', 'NC', 'NC', 'NC', 'GND'] },
+    { types: ['S', 'Y'], pins: ['3.3V', '5V', 'P8_17', 'P8_8', 'P8_9', 'P9_17', 'P9_18', 'P9_21', 'P9_22', 'GND'] },
+    { types: ['Y'], pins: ['3.3V', '5V', 'P9_31', 'P9_29', 'P9_30', 'P9_28', 'P9_27', 'P9_41', 'P9_25', 'GND'] },
+    { types: ['C', 'X'], pins: ['3.3V', '5V', 'P8_4', 'P9_26', 'P9_24', 'P8_7', 'NC', 'NC', 'NC', 'GND'] }
+];
 
-<p>You might be able to see a newer version of this on <a href="http://beagleboard.org/support/bonescript/getPlatform">beagleboard.org/support/bonescript/getPlatform</a></p>
-<h1>getPlatform([callback])</h1>
-<h2>Arguments</h2>
-<ul>
- <li><em>callback</em>: called upon completion</li>
-</ul>
-<h2>Return value</h2>
-<ul>
- <li><em>name</em>: name of the board</li>
- <li><em>serialNumber</em>: serial number of the board</li>
- <li><em>version</em>: revision of the board</li>
- <li><em>bonescript</em>: verison of bonescript</li>
-</ul>
-<h2>callback(x)</h2>
-<ul>
- <li><em>x</em>: same as the return value.</li>
-</ul>
-<h2>Example
- <button class="dynlink" onclick="demoRun('code')">run</button>
- <button class="dynlink" onclick="demoRestore('code')">restore</button>
-</h2>
-<pre id="code" class="use-editor" style="height: 150px;">
-var b = require('bonescript');
-b.getPlatform(printData);
-function printData(x) {
- console.log('name = ' + x.name);
- console.log('version = ' + x.version);
- console.log('serialNumber = ' + x.serialNumber);
- console.log('bonescript = ' + x.bonescript);
-}</pre>
-<div readonly id='console-output' style='height: 200px;'></div>
-<h2>Build and execute instructions</h2>
-<p>Simply plug the board in or point to it on the network.</p>
-<h2>See also</h2>
-<!--
-<h3>Topics</h3>
--->
-<h3>Related functions</h3>
-<ul>
- <li><a href="{{site.baseurl}}/Support/BoneScript/#require">require</a></li>
-</ul>
-<!--
-<h3>Examples</h3>
-<ul>
- <li><a href="demo_attachedCapes">Show attached capes</a></li>
-</ul>
--->
-     </div>
-    </div>
+s.pin = function(socketNumber, pinNumber) {
+    if (socketNumber < 1 || socketNumber > s.sockets.length) throw "socketNumber is invalid.";
+    if (pinNumber < 1 || pinNumber > 10) throw "pinNumber is invalid.";
+    return s.sockets[socketNumber - 1].pins[pinNumber - 1];
+};
+
+function ledTest(event) {
+    event.preventDefault();
+    var selected = $('#socketSelect option:selected').attr("value");
+    console.log("Testing LEDs on socket " + selected);
+    var b = require('bonescript');
+    for(var i = 0; i < 7; i++) {
+        var pin = s.pin(selected, i+3);
+        test(i, pin);
+    }
+
+    function test(i, pin) {
+        if((typeof pin == typeof "a") && (pin.charAt(0) == "P")) {
+            console.log("Setting GPIO mode on pin " + pin);
+            b.pinMode(pin, b.OUTPUT, 7, 'disabled', 'fast', setOn);
+        } else {
+            console.log("Skipping LED " + i + " on pin " + pin);
+        }
+
+        function setOn(x) {
+            if(x.err) {
+                console.log("Error enabing GPIO on pin " + pin + ": " + x.err);
+                b.getPinMode(pin, pinError);
+                return;
+            }
+            console.log("Turning on LED " + i + " on pin " + pin);
+            b.digitalWrite(pin, b.HIGH, doDelay);
+        }
+
+        function pinError(mode) {
+            if((typeof mode.mux == typeof 1) && (typeof mode.options == typeof [])) {
+                console.log("Pin " + pin + " in mode " + mode.options[mode.mux]);
+            }
+        }
+
+        function onError(x) {
+            console.log("pinMode for " + pin + ": " + JSON.stringify(x));
+        }
+
+        function doDelay(x) {
+            console.log("Leaving LED " + i + " on for 3 seconds");
+            setTimeout(setOff, 3000);
+        }
+
+        function setOff() {
+            console.log("Turning off LED " + i + " on pin " + pin);
+            b.digitalWrite(pin, b.LOW);
+        }
+    }
+}
+</script>
+<h2>BoneScript</h2>
+<div id='side-menu' class="t3_sidebar">
+ <ul class="left-menu">
+  <strong>Navigation</strong>
+  <li><a href="{{site.baseurl}}/Support/BoneScript/menu/">Menu contents</a></li>
+ </ul>
+</div>
+<div class="t3_content_1"><div id='connect-status'></div><div id="content_child">
+<h1>Sockets Cape</h1>
+<p>It is recommended you update to the latest version of BoneScript
+    for this demo to work. See <a href="https://gist.github.com/jadonk/bc9a814b0f14d21a0dc3">this
+        gist</a> for helpful hints on updating.
+</p>
+<select name="socket" id="socketSelect">
+</select>
+<h2>LED Test</h2>
+<button id="led">RUN</button>
+<div style="clear:both;"></div>
+<br />
+<br />
+<div readonly id='console-output' style='height: 400px;'></div>
+<script>
+for(socket in s.sockets) {
+    var n = parseInt(socket) + 1;
+    $('#socketSelect').append(
+        $('<option>', { value: n })
+            .text("" + n + ": " + s.sockets[socket].types.join(''))
+    ); 
+}
+$("button#led").click(ledTest);
+</script>
+</div></div>
