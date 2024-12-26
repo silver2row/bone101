@@ -1,0 +1,20 @@
+language: ruby
+rvm:
+- 2.1
+sudo: required
+services:
+  - docker
+before_script: 
+  - gem install github-pages html-proofer
+script:
+  - make
+  - make test
+  #- wget -O- http://travis.debian.net/script.sh | sh -
+
+branches:
+  only:
+    - master
+    - gh-pages
+env:
+  global:
+    - NOKOGIRI_USE_SYSTEM_LIBRARIES=true
